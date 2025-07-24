@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Icons (Bootstrap Icons) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: url('gimbooksbg.png') no-repeat center center/cover;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 15px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .container-right {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      height: 100vh;
+      padding-right: 150px;
+    }
+
+    .login-card h1 {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffffff;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .form-control {
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 16px;
+    }
+
+    .form-check-label {
+      font-size: 14px;
+      color: #fffffff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fffffff;
+      border: none !important;
+      outline: none !important;
+    }
+
+    .google-btn {
+      width: 100%;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 10px;
+      background: #ffffff;
+      color: rgb(73, 62, 62);
+      margin-top: 15px;
+      border: none;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .google-btn:hover {
+      background: #ffffff;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #fffffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="container-right">
+      <div class="login-card">
+        <h1>Welcome Back</h1>
+        <form method="POST" action="logindb.php">
+          <!-- Username -->
+          <div class="mb-3">
+          
+            <label for="username" class="form-label" style="color: #ffffff;">Username</label>
+            <input type="text" class="form-control" id="loginid" name="loginid" placeholder="Enter your username" required>
+          </div>
+
+          <!-- Password with Eye Icon -->
+          <!-- Password with Eye Icon -->
+          <div class="mb-3">
+            <label for="password" class="form-label" style="color: #ffffff;">Password</label>
+            <div class="position-relative">
+              <input type="password" class="form-control" id="Password" name="password" placeholder="Enter your password" required>
+              <i class="bi bi-eye-fill toggle-password position-absolute top-50 end-0 translate-middle-y me-3" 
+                 onclick="togglePasswordVisibility()" style="cursor: pointer;"></i>
+            </div>
+          </div>
+          
+  
+
+          <!-- Remember Me -->
+          <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="rememberMe">
+              <label class="form-check-label" for="rememberMe">Remember Me</label>
+            </div>
+            <a href="#" class="btn btn-link p-0"  style="color: #ffffff;">Forgot Password?</a>
+          </div>
+          
+
+          <!-- Login Button -->
+          <button type="submit" class="btn btn-primary"  name="login" id="login"  style="background-color: #f39314;">Login</button>
+
+          <!-- Login with Google -->
+          <!--<button type="button" class="btn google-btn d-flex align-items-center justify-content-center">
+            <img src="/Users/hackercode/Downloads/4c756a8c-4128-4fee-803e-00134c109327.png" 
+                 alt="Google Logo" style="width: 20px; height: 20px; margin-right: 8px;">
+            Login with Google
+          </button>-->
+          
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Password Toggle Script -->
+  <script>
+    function togglePasswordVisibility() {
+  const passwordField = document.getElementById("password");
+  const icon = document.querySelector(".toggle-password");
+  if (passwordField.type === "password") {
+    passwordField.type = "text";
+    icon.classList.remove("bi-eye-fill");
+    icon.classList.add("bi-eye-slash-fill");
+  } else {
+    passwordField.type = "password";
+    icon.classList.remove("bi-eye-slash-fill");
+    icon.classList.add("bi-eye-fill");
+  }
+}
+
+  </script>
+</body>
+</html>

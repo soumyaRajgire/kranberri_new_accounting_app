@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<?php
+session_start();
+// Check if the user is logged in
+if(!isset($_SESSION['LOG_IN'])){
+  header("Location:login.php");
+  exit();
+}
+
+// Check if a business is selected
+if(!isset($_SESSION['business_id'])){
+  header("Location:dashboard.php");
+  exit();
+} else {
+// Set up variables for selected business and branch
+  $_SESSION['url'] = $_SERVER['REQUEST_URI'];
+  $business_id = $_SESSION['business_id'];
+  // Check if a specific branch is selected
+  if (isset($_SESSION['branch_id'])) {
+      $branch_id = $_SESSION['branch_id'];
+      // Branch-specific code or logic here
+  } 
+}
+include("config.php");
+?> 
+
+<html lang="en">
+
+<head>
+  <title>iiiQbets</title>
+  <meta charset="utf-8">
+  <?php include("header_link.php"); ?>
+  <style type="text/css">
+      .table th, .table td{
+        padding:0.45rem !important;
+      }
+  </style>
+
+<style>
+  .vertical_line {
+    border-left: 1px solid black;
+    height: 300px;
+    position: absolute;
+    left: 70%;
+    margin-left: -3px;
+    top: 0;
+  }
+
+  body{
+    font-size:13px;
+  }
+  .charge-input {
+    height:30px !important;
+  }
+  td{
+    padding: 0px !important;
+  }
+ #additional-charges-container {
+    background-color:#f6f6f6;
+  }
+  .cus_padding{
+    padding: 0px !important;
+  }
+
+ /* Collapse content */
+.collapse-content {
+    display: none;
+    border-top: 1px solid #ddd;
+}
+
+/* Icon rotation */
+.rotate-icon {
+    transition: transform 0.3s ease;
+}
+
+/* Rotate icon when active */
+.rotate-icon.active {
+    transform: rotate(180deg);
+}
+
+#transporterHeader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: auto; /* Adjust this width if necessary */
+}
+
+</style>
+
+</head>
+
+<body class="">
+  <?php include("customersModal.php");?>
+
+<!-- Adding Services Module-->
+<?php include("servicesModalPopup.php");?>
+<!-- End Services Modal-->
+
+<!-- Products Modal -->
+<?php include("productsModalPopUp.php");?>
+<!-- End of Products Modal-->
+<!-- [ Pre-loader ] start -->
+<?php include("menu.php"); ?>
+<!-- [ Header ] end -->
+<!-- [ Main Content ] start -->
+<?php
+          function getinvoiceDetails($conn, $dc_id) {
+            $invoiceId = $conn->real_escape_string($dc_id); // Sanitize input
+echo $invoiceId;
+            $query = "SELECT q.*,c.*,a.*,qi.* from delivery_challan q JOIN customer_master c ON c.id=q.customer_id JOIN address_master a ON a.customer_master_id=c.id JOIN delivery_challan_items qi ON qi.dc_id=q.id 
+            WHERE q.id = '$invoiceId'";
+            
+            $result = $conn->query($query);
+
+            if ($result->num_rows > 0) {
+                $invoiceData = $result->fetch_assoc();
+                $invoiceItems = [];
+                foreach ($result as $row) {
+                  // $netPriceArray = explode('|', $row['net_price']);
+
+                   $invoiceItems[] = [
+                    'itemnum' => $row['itemno'],
+                    'product' => $row['product'],
+                    'prod_desc' => $row['prod_desc'],
+                    'price' => $row['price'],
+                    'qty' => $row['qty'],
+                     'discount' => $row['discount'],
+                    'line_total' => $row['line_total'],
+                    'gst' => $row['gst'],
+                    'cgst' => $row['cgst'],
+                    'sgst' => $row['sgst'],
+                    'igst' => $row['igst'],
+                    'cess_rate' => $row['cess_rate'], // Add cess_rate
+                    'cess_amount' => $row['cess_amount'], // Add cess_amount
+                    'total' => $row['total'], // Add total
+                    'in_ex_gst' => $row['in_ex_gst'],
+                    'productid' => $row['product_id'],
+                    'invoice_items_id' => $row['id'],
+              
+                    ];
+                }
+
+                // Add invoice items array to the main invoice data
+                $invoiceData['invoice_items'] = $invoiceItems;
+// print_r($invoiceData);
+// print_r($invoiceItems);
+                return $invoiceData;
+            } else {
+                return false; // invoice not found
+            }
+          }
+
+          $dc_id = $_GET['id'];
+          $invoiceDetails = getinvoiceDetails($conn, $dc_id);
+        ?>
+
+
+<section class="pcoded-main-container">
+  <div class="pcoded-content">
+    <!-- [ breadcrumb ] start -->
+    <div class="page-header">
+      <div class="page-block">
+        <div class="row align-items-center">
+          <div class="col-md-12">
+            <div class="page-header-title">
+              <h4 class="m-b-10">Edit Delivery Challan</h4>
+            </div>
+            <ul class="breadcrumb">
+              <li class="breadcrumb-item"><a href="index.php"><i class="feather icon-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="#">Delivery Challan</a></li>
+              <!-- <li class="breadcrumb-item"><a href="#!">Basic Tables</a></li> -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- [ breadcrumb ] end -->
+    <!-- [ Main Content ] start -->
+    <!-- [ stiped-table ] start -->
+    <div class="col-xl-12">
+      <div class="card">
+        <div class="card-header">
+        </div>
+        <div class="card-body table-border-style">
+          <div class="table-responsive">
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="">
+                  <div class="card-body">
+                    <form action="edit_delivery_challandb.php" method="POST" enctype="multipart/form-data">
+                      <input type="text" name="inv_id" id="inv_id" value="<?php echo $inv_id;?>" hidden>
+                      <input type="hidden" name="delete_item_ids" id="delete_item_ids" value="">
+                      <div class="row border border-dark" >  
+                          <?php include 'fetch_user_data.php'; ?>
+
+
+<div class="col-md-8 border-right border-dark">
+<h6 style="float:left;" class="pt-2">
+<?php echo htmlspecialchars($user['name']); ?><br/>
+<?php echo htmlspecialchars($user['address']); ?><br/>
+Email: <?php echo htmlspecialchars($user['email']); ?><br/>
+Phone: <?php echo htmlspecialchars($user['phone']); ?><br/>
+GSTIN: <?php echo htmlspecialchars($user['gstin']); ?><br/>
+<input type="text" name="business_state" id="business_state" value="<?php echo htmlspecialchars($user['state']); ?>" hidden>
+
+</h6>
+                        </div>
+                        <div class="col-md-4 pt-1">
+                          <div class="py-1 input-group">
+                          <input class="form-control" type="text" id="purchaseNo" 
+    value="<?php echo isset($invoiceDetails['dc_code']) ? htmlspecialchars($invoiceDetails['dc_code']) : ''; ?>" 
+    name="purchaseNo" readonly />
+                            <label class="form-control col-sm-5" for="purchaseNo">Purchase No</label>
+                          </div>
+                          <div class="py-1 input-group">
+                          <input class="form-control" type="date" id="purchaseDate" name="purchaseDate" 
+    value="<?php echo isset($invoiceDetails['dc_date']) ? $invoiceDetails['dc_date'] : ''; ?>" required/>
+                            <label class="form-control col-sm-5" for="purchaseDate">Purchase Date</label>
+                          </div>
+                          <div class="py-1 input-group">
+                          <input class="form-control" type="date" id="dueDate" name="dueDate" 
+    value="<?php echo isset($invoiceDetails['due_date']) ? $invoiceDetails['due_date'] : ''; ?>" required/>
+                            <label class="form-control col-sm-5" for="dueDate">Due Date</label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row" id="customer_data">
+                        <div class="col-md-4 border-left border-bottom border-dark p-3">
+                          <div>
+                            <h6>Customer Info</h6>
+                            <span><?php echo $invoiceDetails['customerName'];?></span><br/>
+                            <span>Business Name :<?php echo $invoiceDetails['business_name'] === "" ? "business name": $invoiceDetails['business_name'];?></span><br/>
+                            <span><?php echo $invoiceDetails['s_state']?></span><br/>
+                            <input type= "hidden" name="s_state" id ="s_state" value="<?php echo $invoiceDetails['s_state']?>" />
+                            <span>GSTIN :<?php echo $invoiceDetails['gstin'] === "" ? "": "gstin";?></span>
+                          </div>
+                        </div>
+                        <input class="form-control" name="customer_name_choice" id="customer_name_choice" value="<?php echo $invoiceDetails['customerName'];?>" hidden/>
+                        <input class="form-control" name="customer_email" id="customer_email" value="<?php echo $invoiceDetails['email'];?>" hidden/>
+                        <input class="form-control" name="cst_mstr_id" id="cst_mstr_id" value="<?php echo $invoiceDetails['customer_id'];?>" hidden/>
+                        <div class="col-md-4 border-left border-bottom border-dark p-3">
+                          <div>
+                            <h6>Billing Address</h6>
+                            <span><?php echo $invoiceDetails['b_address_line1'] === "" ? '<span style="color:red;">Adress Line1</span>' : $invoiceDetails['b_address_line1'];?></span><br/>
+                            <span><?php echo $invoiceDetails['b_address_line2'] === "" ? '<span style="color:red;">Adress Line2</span>' : $invoiceDetails['b_address_line2'];?></span><br/>
+                            <span><?php echo ($invoiceDetails['b_city'] === "" ? '<span style="color:red;">City</span>' : $invoiceDetails['b_city']) . "-". ($invoiceDetails['b_Pincode'] === "" ? '<span style="color:red;">Pincode</span>': $invoiceDetails['b_Pincode']) ;?></span><br/>
+                          </div>
+                        </div>
+                        <div class="col-md-4 border-left border-bottom border-right border-dark p-3">
+                          <h6>Shipping Address</h6>
+                          <span><?php echo $invoiceDetails['s_address_line1'] === "" ? '<span style="color:red;">Adress Line1</span>' : $invoiceDetails['s_address_line1'];?></span><br/>
+                          <span><?php echo $invoiceDetails['s_address_line2'] === "" ? '<span style="color:red;">Adress Line2</span>' : $invoiceDetails['s_address_line2'];?></span><br/>
+                          <span><?php echo ($invoiceDetails['s_city'] === "" ? '<span style="color:red;">City</span>' : $invoiceDetails['s_city']) . "-". ($invoiceDetails['s_Pincode'] === "" ? '<span style="color:red;">Pincode</span>': $invoiceDetails['s_Pincode']) ;?></span><br/>
+                        </div>
+                      </div>
+            
+                      <!--adding product -->
+      <div class="row border-dark border-right border-left border-top border-bottom" id="box_loop_1">
+          <div class="col-md-3 p-1 border-right border-left border-bottom">ITem
+              <button type="button" class="btn btn-sm dropdown-toggle float-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="font-size: 11px; font-weight: 900; color: blue;"><i class="fa fa-plus"></i> New Item</button>
+
+              <div class="dropdown-menu">
+                  <a class="dropdown-item" href="#" data-value="products">Products</a>
+                  <a class="dropdown-item" href="#" data-value="services">Services</a>
+              </div>
+
+          </div>
+          <div class="col-md-2 p-1 border-right border-bottom">
+                 <!-- <label for="qty">Quantity</label> -->
+                 Quantity
+              </div>
+          
+              <div class="col-md-2 p-1 border-right border-bottom" id="pricevalbox">
+                 <!-- <label for="price">Price</label> -->
+               Price
+              </div>
+              <div class="col-md-2 p-1 border-right border-bottom" >
+               Discount
+              </div>
+               <div class="col-md-2 p-1 border-right border-bottom" >
+                 <!-- <label for="gst">GST</label> -->
+                GST
+              </div>
+               <!--<div class="col-md-2 p-1 border-right border-bottom" >
+                  <label for="gst">GST</label> 
+                Total
+              </div>-->
+
+          <div class="col-md-3 p-1 border-right border-left border-bottom">
+            
+         
+              <input type="number" name="itemno" id="itemno" select-group="" data-count=1 hidden />
+                    <!-- <input class="form-control" list="product" name="product_choice" id="product_choice" onchange="checkvalue(this.value)" placeholder="Product" /> -->
+                    <input class="form-control" list="product" name="product_choice" id="product_choice" placeholder="Product" />
+                            <datalist name="product" id="product">
+                              <option value="">Select Items </option>
+                              <!-- <option value="Others"> -->
+                                <?php
+                                $sql = "select * from inventory_master where  inventory_type ='Sales Catalog'";
+                                $result = $conn->query($sql);
+                                if ($result->num_rows > 0) {
+                                  while ($row = mysqli_fetch_assoc($result)) {
+                                ?>
+                              <!-- <option value="<?php echo $row["name"] ?>"> -->
+                  <option value="<?php echo $row["name"]?>" data-productid="<?php echo $row["id"]?>">
+                            <?php
+                                  }
+                                }
+                            ?>
+
+                            </datalist>
+                            <input type="text" name="productid" id="productid" value="" hidden/>
+                            <textarea name="prod_desc" id="prod_desc" rows="1" class="form-control" cols="20" placeholder="Product description"></textarea>
+                 </div>
+            
+             
+              <div class="col-md-2 p-1 border-right border-bottom">
+                 <!-- <label for="qty">Quantity</label> -->
+                 <input class="form-control" type="number" min="1" name="qty" id="qty" value="1">
+              </div>
+          
+              <div class="col-md-2 p-1 border-right border-bottom" id="pricevalbox">
+                 <!-- <label for="price">Price</label> -->
+                <input type="number" class="form-control" name="price" id="price" value="" >
+              </div>
+              <div class="col-md-2 p-1 border-right border-bottom" >
+                 <!-- <label for="discount">Discount</label> -->
+                 
+                <input type="number" class="form-control" name="discount" id="discount" value="" min="0">
+              </div>
+               <div class="col-md-2 p-1 border-right border-bottom" >
+                 <!-- <label for="gst">GST</label> -->
+                
+                   <input type="number" min="0" class="form-control" name="gst" id="gst" value="">
+                
+              </div>
+              <!-- <div class="col-md-2 p-1 border-right border-bottom" id="pricevalbox"> -->
+                <input type="text" class="form-control" name="netprice" id="netprice" value="" hidden >
+               <input type="text" class="form-control" name="ttprice" id="ttprice" value="" hidden>
+               <input type="text" class="form-control" name="cess_rate" id="cess_rate" value="" hidden>
+               <input type="text" class="form-control" name="cess_amount" id="cess_amount" value="" hidden>
+                <!-- <input type="text" name="gst" id="gst" value="" hidden> -->
+                <input type="text" name="in_ex_gst" id="in_ex_gst" value="" hidden>
+              <!-- </div> -->
+                        <div class="col-md-1 p-3 border-right border-bottom">
+                          <button type="button" class="btn btn-success btn-sm" name="Addmore" id="addmore" onclick="add_more()">Add</button>
+                        </div>
+                      </div>                    
+                      <div class="row border border-dark">
+                        <table class="table table-bordered" id="item-list">
+                        <colgroup>
+                    <col width="18%">
+                    <col width="25%">
+                    <col width="1%">
+                    <col width="10%">
+                    <col width="1%">
+                    <col width="7%">
+                    <col width="6%">
+                    <col width="6%">
+                    <col width="7%">
+                    <col width="1%">
+                    <col width="1%">
+                    <col width="15%">
+                    <col width="15%">
+                    
+                   
+                  </colgroup>
+                          <thead>
+                          <tr>
+                          
+        <th>Product</th>
+        <th>Product Desc</th>
+        <th>Quantity</th>
+        <th>Price</th>
+        <th>Discount</th>
+        <th>GST</th>
+        <th>CGST</th>
+        <th>SGST</th>
+        <th>IGST</th>
+        <th>Cess Rate</th>
+<!-- <th>Cess Amount</th> -->
+<th>Total</th>
+<th>Action</th>
+    </tr>
+                          </thead>
+                          <tbody>
+                            <?php
+                              $c =1;
+                              $tot_amt =0;
+                              $index =0;
+                              foreach ($invoiceDetails['invoice_items'] as $item) {
+                               
+                            ?>
+                            <tr>
+                              <td>
+                                <?php echo $item['product']; ?>
+                              </td>
+                              <!-- <td>${prodDesc ? prodDesc : 'No description'}<input type="hidden" name="products[${count}][pdesc]" value="${prodDesc}"></td> -->
+
+                              <td><textarea class="form-control" name="products[<?php echo $index; ?>][pdesc]" value="<?php echo $item['prod_desc']; ?>"><?php echo $item['prod_desc']; ?></textarea></td>
+                              <td data-field="pqty"> <input type="number" class="form-control" name="products[<?php echo $index; ?>][pqty]" value="<?php echo $item['qty']; ?>" ></td>
+
+                              <td data-field="price"> <input type="text" class="form-control" name="products[<?php echo $index; ?>][pprice]" value="<?php echo $item['line_total']; ?>"></td>
+
+                              <td data-field="discount"> <input type="text" class="form-control" name="products[<?php echo $index; ?>][discount]" value="<?php echo $item['discount']; ?>"></td>
+
+                              <td> <input type="text" class="form-control" name="products[<?php echo $index; ?>][gst]" value="<?php echo $item['gst']; ?>"></td>
+
+                              <td  data-field="cgst"><span><?php echo $item['cgst']; ?></span> <input type="hidden" class="form-control" name="products[<?php echo $index; ?>][cgst]" value="<?php echo $item['cgst']; ?>"></td>
+
+                              <td data-field="sgst"><span> <?php echo $item['sgst']; ?></span><input type="hidden" class="form-control" name="products[<?php echo $index; ?>][sgst]" value="<?php echo $item['sgst']; ?>"></td>
+
+                              <td data-field="igst"> <span><?php echo $item['igst']; ?></span><input type="hidden" class="form-control" name="products[<?php echo $index; ?>][igst]" value="<?php echo $item['igst']; ?>"></td>
+
+                              <td data-field="cess_rate"><span><?php echo $item['cess_rate']?>%(<?php echo $item['cess_amount']; ?>)</span>
+                                <input type="hidden" class="form-control" name="products[<?php echo $index; ?>][cess_rate]" value="<?php echo $item['cess_rate']; ?>" >
+<input type="hidden" class="form-control" name="products[<?php echo $index; ?>][cess_amount]" value="<?php echo $item['cess_amount']; ?>" >
+                              </td>
+<!-- <td data-field="cess_amount"><span><?php echo $item['cess_amount']; ?></span></td> -->
+
+
+
+                              <td  data-field="line_total"><span><?php echo $item['total']; ?></span><input type="hidden" name="products[<?php echo $index; ?>][ptotal]" value="<?php echo $item['total']; ?>"></td>
+
+                              <!-- <input type="hidden" name="products[<?php echo $index; ?>][pitemno]" value="<?php echo $item['itemnum']; ?>"> -->
+                              <!-- <input type="hidden" name="products[<?php echo $index; ?>][pprice]" value="<?php echo $item['price']; ?>"> -->
+                              <!-- <input type="hidden" name="products[<?php echo $index; ?>][pgst]" value="<?php echo $item['gst']; ?>"> -->
+                              <input type="hidden" name="products[<?php echo $index; ?>][pproductid]" value="<?php echo $item['productid']; ?>">
+                              <!-- <input type="hidden" name="products[<?php echo $index; ?>][pcgst]" value="<?php echo $cgst; ?>"> -->
+                              <!-- <input type="hidden" name="products[<?php echo $index; ?>][psgst]" value="<?php echo $sgst; ?>"> -->
+                              <input type="hidden" name="products[<?php echo $index; ?>][pin_ex_gst]" value="<?php echo $item['in_ex_gst']; ?>">
+                              <input name="products[<?php echo $index; ?>][attr_id]" value="<?php echo $item['invoice_items_id']?>" hidden/>
+         
+                              <td><button class="btn btn-sm btn-outline-danger delete-item" type="button" data-itemid="<?php echo $item['invoice_items_id']; ?>"><i class="fa fa-trash" style="color:red;"></i></button></td>
+                            </tr>
+                            <?php
+                              $tot_amt += $item['line_total']; 
+                              $index++;
+                              $c++;
+                              }
+                            ?>
+                            <input name="i_id" id="i_id" value="<?php echo ($c);?>" hidden/> 
+                          </tbody>
+                        
+                        </table>
+                      </div>
+                      <div class="row">
+                <div class="col-md-6 border-left border-right border-bottom border-dark p-1">
+                    <textarea class="form-control" placeholder="Note" name="note" id="note" cols="20" style="width: -webkit-fill-available;height: 103px;"></textarea>
+                </div>
+                <div class="col-md-6 border-right border-bottom border-dark p-1">
+
+                
+                  <table style="width:100%;">
+                 <tr>       
+                     <td class="" id="taxable_amt_text" style="width: 60%;vertical-align: middle;border-right: 1px solid #ada7a7;border-bottom: 0px;">Taxable Amount</td>
+                     <td style="text-align:right;" id="final_taxable_amt"><?php echo $invoiceDetails['total_amount']?> </td>
+                   
+                </tr> 
+          
+                <tr>
+                    <td class="" style="width: 60%;vertical-align: middle;border-right: 1px solid #ada7a7;border-bottom: 0px;">Total GST</td>
+                    <td style="text-align:right;" id="final_gst_amount" > <?php echo $invoiceDetails['total_gst']?></td>
+                     
+                </tr>
+
+                <tr>
+                    <td class="" style="width: 60%;vertical-align: middle;border-right: 1px solid #ada7a7;border-bottom: 0px;">Total Cess</td>
+                    <td style="text-align:right;" id="final_cess_amount" ><?php echo $invoiceDetails['total_cess']?></td>
+                    
+                </tr>
+             
+                 <tr id="additional-charges-container" >
+                    <td class="" colspan=2 style="padding: 0px 2px !important;" >
+                        <div class="additional-charges-list">
+                            <!-- Additional charges will be appended here-->
+                        </div>
+                    </td> 
+                </tr>
+                <tr>
+                    <td class="" style="width: 60%;vertical-align: middle;border-right: 1px solid #ada7a7;border-bottom: 0px;" >Select Additional Charges</td>
+                    <td>
+                        <select class="form-control" id="additional_charges" style="margin-left:3px;width:97%;height:33px;" onchange="addCharge();">
+                            <option value="">Select Additional Charges</option>
+                            <!-- <option value="freight charge">Freight Charge</option> -->
+                            <option value="insurance charge">Insurance Charge</option>
+                            <option value="loading charge">Loading Charge</option>
+                            <option value="packing charge">Packing Charge</option>
+                            <option value="other charge">Other Charge</option>
+                            <option value="other taxes">Other Taxes</option>
+                            <option value="reimbursements">Reimbursements</option>
+                            <option value="excise duties">Excise Duties</option>
+                            <option value="miscellaneous">Miscellaneous</option>
+                        </select>
+                    </td>
+                </tr>
+                 <tr>
+                      <th class="" style="width: 60%;vertical-align: middle;border-right: 1px solid #ada7a7;border-bottom: 0px;" >Grand Total</th>
+                     <th class="text-right">
+                <span id="gtotal">0.00</span>
+                 <input type="hidden" name="final_cess_amount" id="final_cess_amount_field" value="">
+                   <input type="hidden" name="final_taxable_amt" id="final_taxable_amt_field" value="" >
+                  <input type="hidden" name="final_gst_amount" id="final_gst_amount_field" value="">
+                <input type="hidden" name="total_amount" id="total_amount" value="">
+            </th>
+                    </tr>
+               
+            </table>
+               
+                </div>
+            </div>
+
+            <?php include("transportation-details.php"); ?>
+                      <div class="row">
+                        <div class="col-md-6 border-left border-right border-bottom border-dark p-3">
+                          <textarea class="form-control" placeholder="Terms and Condition" name="terms_condition" id="terms_condition" cols="20" style="width: -webkit-fill-available;height: 112px;"></textarea>
+                        </div>
+                        <div class="col-md-6 border-right border-bottom border-dark p-3">
+                          <div >
+                            <h6>For KRIKA MKB CORPORATION PRIVATE LIMITED</h6><br/>
+                            <h6>Authorized Signatory</h6>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row col-md-12 text-center pt-3">
+                        <div class="col-md-2"><input type="submit" class="btn btn-primary " name="update" value="update" /></div>
+                        <div class="col-md-2"><input type="reset" class="btn btn-danger " name="cancel" value="Cancel" /></div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="text/javascript">
+   // $(document).ready(function () {
+    // console.log("Script loaded and running");
+
+    // Function to update line total for a product row
+    function updateLineTotal(tr) {
+          let grandTotal = 0;
+        let taxableAmount = 0;
+        let totalGstAmount = 0;
+        let totalCessAmount = 0;
+
+      let cgst=0, sgst=0,igst =0;
+      let customer_state = $('#s_state').val();
+   let business_state = $('#business_state').val();
+        let qty = parseFloat(tr.find('input[name*="[pqty]"]').val()) || 0;
+        let price = parseFloat(tr.find('input[name*="[pprice]"]').val()) || 0;
+        let discount = parseFloat(tr.find('input[name*="[discount]"]').val()) || 0;
+        let gst = parseFloat(tr.find('input[name*="[gst]"]').val()) || 0;
+        let cessRate = parseFloat(tr.find('input[name*="[cess_rate]"]').val()) || 0;
+
+       let lineTotal = qty * price - (price * discount/100);
+               console.log(lineTotal);
+                console.log(gst);
+        let gstAmount = (gst / 100) * lineTotal;
+        console.log(gstAmount);
+        if(customer_state === business_state)
+        {
+                    cgst = gstAmount / 2;
+                sgst = gstAmount / 2;
+            } else {
+                igst = gstAmount;
+            }
+        
+        // let cgst = gstAmount/ 2 ;
+        let cessAmount = (cessRate / 100) * lineTotal;
+        let rowTotal = lineTotal + gstAmount + cessAmount;
+        console.log
+
+        // Update row values
+      tr.find('td[data-field="cgst"] span').text(cgst.toFixed(2));
+    tr.find('td[data-field="cgst"] input[name*="[cgst]"]').val(cgst.toFixed(2));
+
+    tr.find('td[data-field="sgst"] span').text(sgst.toFixed(2));
+    tr.find('td[data-field="sgst"] input[name*="[sgst]"]').val(sgst.toFixed(2));
+
+     tr.find('td[data-field="igst"] span').text(igst.toFixed(2));
+    tr.find('td[data-field="igst"] input[name*="[igst]"]').val(igst.toFixed(2));
+
+     tr.find('td[data-field="discount"] span').text(discount.toFixed(2));
+    tr.find('td[data-field="discount"] input[name*="[discount]"]').val(discount.toFixed(2));
+
+let cessRateFormatted = `${cessRate.toFixed(2)}% (${cessAmount.toFixed(2)})`;
+
+     tr.find('td[data-field="cess_rate"] span').text(cessRateFormatted);
+    tr.find('td[data-field="cess_rate"] input[name*="[cess_rate]"]').val(cessRate);
+    tr.find('td[data-field="cess_amount"] input[name*="[cess_amount]"]').val(cessAmount.toFixed(2));
+
+
+     // tr.find('td[data-field="cess_amount"] span').text(cessAmount.toFixed(2));
+    
+        tr.find('td[data-field="line_total"] span').text(rowTotal.toFixed(2));
+          tr.find('td[data-field="line_total"] input[name*="[line_total]"]').val(rowTotal.toFixed(2));
+
+        // tr.find('input[name*="[cess_amount]"]').val(cessAmount.toFixed(2));
+       taxableAmount += lineTotal;
+            totalGstAmount += gstAmount;
+            totalCessAmount += cessAmount;
+            grandTotal += rowTotal;
+
+
+        //      $('#final_taxable_amt').text(taxableAmount.toFixed(2));
+        // $('#final_gst_amount').text(totalGstAmount.toFixed(2));
+        // $('#final_cess_amount').text(totalCessAmount.toFixed(2));
+        // $('#gtotal').text(grandTotal.toFixed(2));
+
+            // Update hidden inputs
+    // $('input[name="total_amount"]').val(taxableAmount.toFixed(2));
+    // $('input[name="total_gst"]').val(totalGstAmount.toFixed(2));
+    // $('input[name="total_cess"]').val(totalCessAmount.toFixed(2));
+    // $('input[name="grand_total"]').val(grandTotal.toFixed(2));
+
+        // Recalculate grand total
+        calc_total();
+    }
+
+    // Function to calculate grand total
+    function calc_total() {
+      alert("from calc total");
+      let totalTaxable = 0, totalGST = 0, totalCess = 0, grandTotal = 0;
+        let packPrice = parseFloat($('#pack_price').val()) || 0;
+
+$('#item-list tbody tr').each(function (index, row) {
+    const tr = $(row);
+
+    console.log('Row', index + 1, {
+        qty: tr.find('input[name*="[pqty]"]').val(),
+        price: tr.find('input[name*="[price]"]').val(),
+        discount: tr.find('input[name*="[discount]"]').val(),
+        gst: tr.find('input[name*="[gst]"]').val(),
+        cess_rate: tr.find('input[name*="[cess_rate]"]').val()
+    });
+});
+
+        // Sum all line totals
+        $('#item-list tbody tr').each(function () {
+          const tr = $(this);
+            const qty = parseFloat(tr.find('input[name*="[pqty]"]').val()) || 0;
+            const price = parseFloat(tr.find('input[name*="[pprice]"]').val()) || 0;
+            const discount = parseFloat(tr.find('input[name*="[discount]"]').val()) || 0;
+            const gst = parseFloat(tr.find('input[name*="[gst]"]').val()) || 0;
+            const cessRate = parseFloat(tr.find('input[name*="[cess_rate]"]').val()) || 0;
+
+            const taxableAmount = qty * price - (price * discount/100);
+            const gstAmount = (gst / 100) * taxableAmount;
+            const cessAmount = (cessRate / 100) * taxableAmount;
+            const rowTotal = taxableAmount + gstAmount + cessAmount;
+
+            totalTaxable += taxableAmount;
+            totalGST += gstAmount;
+            totalCess += cessAmount;
+            grandTotal += rowTotal;
+        });
+console.log("total taxable "+totalTaxable);
+console.log("Total GST " + totalGST);
+        // Update the totals in the UI
+        $('#final_taxable_amt').text(totalTaxable.toFixed(2));
+        $('#final_gst_amount').text(totalGST.toFixed(2));
+        $('#final_cess_amount').text(totalCess.toFixed(2));
+        $('#gtotal').text(grandTotal.toFixed(2));
+
+        // Update hidden inputs
+        $('#final_taxable_amt_field').val(totalTaxable.toFixed(2));
+        $('#final_gst_amount_field').val(totalGST.toFixed(2));
+        $('#final_cess_amount_field').val(totalCess.toFixed(2));
+        $('#total_amount').val(grandTotal.toFixed(2));
+    }
+
+    // Function to add a new row
+    function add_more() {
+      const count = $('#i_id').val();
+    const product = $('#product_choice').val();
+       const productid = $('#productid').val();
+    const prodDesc = $('#prod_desc').val() || "";
+    const qty = parseFloat($('#qty').val()) || 0;
+    const price = parseFloat($('#price').val()) || 0;
+  const netprice = parseFloat($('#netprice').val()) || 0;
+    const discount = parseFloat($('#discount').val()) || 0;
+    const gst = parseFloat($('#gst').val()) || 0;
+    const cessRate = parseFloat($('#cess_rate').val()) || 0;
+    const in_ex_gst = $('#in_ex_gst').val();
+
+      
+  let basePrice = 0;
+    let taxableAmount = 0;
+    let gstAmount = 0;
+    let cgst = 0, sgst = 0, igst = 0;
+    let totalAmount = 0;
+
+    // Calculate taxable amount and GST based on inclusive/exclusive GST
+    if (in_ex_gst === "inclusive of GST") {
+        // basePrice = price / (1 + gst / 100); // Extract base price
+        taxableAmount = netprice * qty;
+        // gstAmount = taxableAmount * (gst / 100); // GST amount
+    } else if (in_ex_gst === "exclusive of GST") {
+        taxableAmount = price * qty; // Price is already exclusive of GST
+        // gstAmount = taxableAmount * (gst / 100); // GST amount
+    }
+
+    // Apply Discount
+    const discountedTaxableAmount = taxableAmount - (taxableAmount * discount) / 100;
+
+    // Recalculate GST based on discounted taxable amount
+    gstAmount = discountedTaxableAmount * (gst / 100);
+
+    // Determine CGST, SGST, IGST based on state
+ let customer_state = $('#s_state').val();
+   let business_state = $('#business_state').val();
+    if (customer_state === business_state) {
+      
+        // Intrastate: Split GST equally into CGST and SGST
+        cgst = (gstAmount / 2);
+        sgst = gstAmount / 2;
+    } else {
+        // Interstate: Entire GST is treated as IGST
+        igst = gstAmount;
+    }
+ 
+
+
+// Calculate Cess on discounted taxable amount
+const finalCessAmount = discountedTaxableAmount * (cessRate / 100); 
+console.log(discountedTaxableAmount);
+
+console.log(finalCessAmount);
+    // Use the retrieved cess amount
+    // const finalCessAmount = cess_amount * qty;
+
+    // Calculate Total Amount
+    totalAmount = discountedTaxableAmount + gstAmount + finalCessAmount;
+console.log(totalAmount);
+
+        // Add row HTML
+        const newRow = `
+        <tr>
+         <td>${product}<input type="hidden" name="products[${count}][pname]" value="${product}"><input type="hidden" name="products[${count}][pproductid]" value="${productid}"></td>
+            <td>${prodDesc}<input type="hidden" name="products[${count}][pdesc]" value="${prodDesc}"></td>
+            <td>${qty}<input type="hidden" class="form-control" name="products[${count}][pqty]" value="${qty}"></td>
+            <td>${price.toFixed(2)}<input type="hidden" class="form-control" name="products[${count}][pprice]" value="${price}"></td>
+            <td>${discount}%<input type="hidden" class="form-control" name="products[${count}][discount]" value="${discount}"></td>
+            <td>${gst}%<input type="hidden" class="form-control" name="products[${count}][gst]" value="${gst}"></td>
+            <td>${cgst > 0 ? cgst.toFixed(2) : '-'}<input type="hidden" class="form-control" name="products[${count}][cgst]" value="${cgst.toFixed(2)}"></td>
+            <td>${sgst > 0 ? sgst.toFixed(2) : '-'}<input type="hidden" class="form-control" name="products[${count}][sgst]" value="${sgst.toFixed(2)}" ></td>
+            <td>${igst > 0 ? igst.toFixed(2) : '-'}<input type="hidden" class="form-control" name="products[${count}][igst]" value="${igst.toFixed(2)}" ></td>
+            <td>${finalCessAmount > 0 ? finalCessAmount.toFixed(2) + ' (' + cess_rate + '%)' : '-'}<input type="hidden" class="form-control" name="products[${count}][cess_rate]" value="${cessRate}"><input type="hidden" class="form-control" name="products[${count}][cess_amount]" value="${finalCessAmount.toFixed(2)}" ></td>
+            <td>${totalAmount.toFixed(2)}<input type="hidden" class="form-control" name="products[${count}][ptotal]" value="${totalAmount.toFixed(2)}" ><input type="hidden" name="products[${count}][pin_ex_gst]" value="${in_ex_gst}"></td>
+            <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)"><i class="fa fa-trash"></i></button></td>
+        </tr>
+    `;
+
+        // Append new row
+        $('#item-list tbody').append(newRow);
+
+    // Clear input fields
+    $('#product_choice').val('');
+    $('#prod_desc').val('');
+    $('#qty').val(1);
+    $('#price').val('');
+    $('#discount').val('');
+    $('#gst').val('');
+    $('#cess_rate').val('');
+
+let totalTaxable = parseFloat($('#final_taxable_amt_field').val());
+totalTaxable = totalTaxable + totalAmount;
+
+   $('#final_taxable_amt').text(totalTaxable.toFixed(2));
+        // $('#final_gst_amount').text(totalGST.toFixed(2));
+        // $('#final_cess_amount').text(totalCess.toFixed(2));
+        // $('#gtotal').text(grandTotal.toFixed(2));
+
+        // Update hidden inputs
+        $('#final_taxable_amt_field').val(totalTaxable.toFixed(2));
+        // $('#final_gst_amount_field').val(totalGST.toFixed(2));
+        // $('#final_cess_amount_field').val(totalCess.toFixed(2));
+        // $('#total_amount').val(grandTotal.toFixed(2));
+        // Recalculate grand total
+        count++;
+        calc_total();
+    }
+
+    // Function to remove a row
+    function rem_item(event) {
+        $(event).closest('tr').remove();
+        calc_total();
+    }
+
+    // Event listeners
+    $('#item-list').on('input', 'input', function () {
+      console.log("from oninput ");
+        let tr = $(this).closest('tr');
+        updateLineTotal(tr);
+    });
+
+    // $('#pack_price').on('input', calc_total);
+    // $('#addmore').click(add_more);
+
+    // Product selection and price fetching
+    $("#product_choice").change(function () {
+        let productName = $(this).val();
+        let dataListOptions = document.getElementById('product').querySelectorAll('option');
+        let productId = '';
+
+        for (let option of dataListOptions) {
+            if (option.value === productName) {
+                productId = option.getAttribute('data-productid');
+                break;
+            }
+        }
+
+        $("#productid").val(productId);
+
+        // Fetch product details via AJAX
+        $.ajax({
+            url: 'getprice.php',
+            type: "GET",
+            data: { productname: productName, productid: productId },
+            success: function (data) {
+                let jsonData = JSON.parse(data);
+              
+                $("#gst").val(jsonData.gst);
+                 // $("#prod_desc").val(jsonData.prod_desc);
+                $("#price").val(jsonData.in_ex_gst === "inclusive of GST" ? jsonData.netprice : jsonData.price);
+                $("#netprice").val(jsonData.netprice);
+                $("#in_ex_gst").val(jsonData.in_ex_gst);
+            }
+        });
+    });
+
+    // Initial calculation
+    calc_total();
+// });
+
+</script>
+
+
+
+  <!-- Required Js -->
+  <script src="assets/js/vendor-all.min.js"></script>
+  <script src="assets/js/plugins/bootstrap.min.js"></script>
+  <script src="assets/js/pcoded.min.js"></script>
+
+  <script>
+    // Handle dropdown item clicks
+    $('.dropdown-item').click(function() {
+      var selectedValue = $(this).data('value');
+      $('#selectedOption').val(selectedValue);
+
+      if(selectedValue === "products")
+      {
+        $("#addProductsModal").modal("show");
+      } else if(selectedValue === "services"){
+        $("#addServicesModal").modal("show");
+      }
+    });
+  </script>
+
+  <script type="text/javascript">
+    // Function to calculate Net Price and GST and display them in a single input field
+    function calculatePrices(modalId) {
+      var price = parseFloat($(".modal-input.price-input[data-modal='" + modalId + "']").val()) || 0;
+      var gstRate = parseFloat($(".modal-select.gst-rate-input[data-modal='" + modalId + "']").val()) || 0;
+      var inclusiveGst = $(".modal-select.inclusive-gst-select[data-modal='" + modalId + "']").val();
+      var nonTaxable = parseFloat($(".modal-input.non-taxable-input[data-modal='" + modalId + "']").val()) || 0;
+
+      var netPriceField = $(".modal-input.net-price-input[data-modal='" + modalId + "']");
+
+      if (inclusiveGst === "inclusive of GST" && price > 0) {
+        var gstAmount = (price * gstRate) / 100;
+        var netPrice = price - gstAmount - nonTaxable;
+        netPriceField.val(netPrice.toFixed(2) + " | " + gstAmount.toFixed(2));
+      } else if (inclusiveGst === "exclusive of GST" && price > 0) {
+        var gstAmount = (price * gstRate) / 100;
+        var netPrice = price-nonTaxable;
+        netPriceField.val(netPrice.toFixed(2) + " | " + gstAmount.toFixed(2));
+      } else {
+        netPriceField.val("");
+      }
+    }
+
+    // Attach event listeners to elements in both modals based on their classes and data attributes
+    $(".modal-input, .modal-select").on("input", function () {
+      var modalId = $(this).data("modal");
+      calculatePrices(modalId);
+    });
+  </script>
+  <script type="text/javascript">
+$(document).ready(function() {
+    $('.delete-item').click(function() {
+        var itemId = $(this).data('itemid');
+        var deleteItemIds = $('#delete_item_ids').val();
+
+        if (confirm('Are you sure you want to delete this item?')) {
+            if (deleteItemIds) {
+                deleteItemIds += ',' + itemId;
+            } else {
+                deleteItemIds = itemId;
+            }
+            $('#delete_item_ids').val(deleteItemIds);
+            $(this).closest('tr').remove();
+        }
+    });
+});
+
+function toggleSection(sectionId, header) {
+        const content = document.getElementById(sectionId);
+        const icon = header.querySelector('.rotate-icon');
+        if (content.style.display === "none" || content.style.display === "") {
+            content.style.display = "block";  
+            icon.classList.add('active');
+        } else {
+            content.style.display = "none";
+            icon.classList.remove('active');
+        }
+    }
+    
+function showTransportDetails(mode) {
+        const transportData = document.getElementById('transportData');
+        if (mode === "None") {
+            transportData.style.display = "none";
+        } else {
+            transportData.style.display = "block";
+        }
+    }
+
+    function toggleOptionalFields() {
+        const optionalFields = document.getElementById('optionalFields');
+        optionalFields.style.display = optionalFields.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Initialize by hiding transport data
+    showTransportDetails('None');
+    function showTransportDetails(mode) {
+    // Hide all transport data sections
+    const transportSections = document.querySelectorAll('.transport-mode-data');
+    transportSections.forEach(section => section.classList.add('d-none'));
+
+    // Show the selected transport mode section
+    const selectedSection = document.getElementById(mode.toLowerCase() + 'Data');
+    if (selectedSection) {
+        selectedSection.classList.remove('d-none');
+    }
+}
+// document.addEventListener('DOMContentLoaded', function () {
+//     const toggleButton = document.getElementById('toggleButton');
+//     if (toggleButton) {
+//         toggleButton.addEventListener('click', function () {
+//             const optionalFields = document.getElementById('optionalFields');
+//             const icon = this.querySelector('i');
+//             optionalFields.classList.toggle('d-none');
+//             icon.classList.toggle('fa-plus');
+//             icon.classList.toggle('fa-minus');
+//         });
+//     } else {
+//         console.warn('No element with id="toggleButton" found.');
+//     }
+// });
+
+function updateFooter() {
+  // Get all table rows in tbody
+  let rows = document.querySelectorAll('#item-list tbody tr');
+  
+  // Calculate the total
+  let total = 0;
+  rows.forEach(row => {
+    let price = parseFloat(row.querySelector('.price').innerText); // Assuming you have a price class
+    let quantity = parseInt(row.querySelector('.quantity').innerText); // Assuming you have a quantity class
+    total += price * quantity;
+  });
+
+  // Update the total price in footer
+  document.getElementById('totalPrice').innerText = total.toFixed(2);
+
+  // Dynamically update colspan in footer
+  let columnCount = document.querySelectorAll('#item-list thead th').length;
+  document.getElementById('totalPrice').setAttribute('colspan', columnCount - 1); // Minus 1 for 'Total' column
+}
+
+
+
+
+
+
+
+function editItem(button) {
+    console.log('Edit button clicked');
+    const row = $(button).closest('tr'); // Wrap with jQuery
+    console.log('Row:', row);
+
+    // Fetch the item ID from the row data
+    const itemId = row.data('item-id');  
+    console.log('Item ID:', itemId);
+
+    // Fetch data from the table row
+    const item = row.find('td').eq(0).text();  // Product Name (or Description) in the first column
+    const prod_desc = row.find('td').eq(1).text(); // Product Description
+   
+    const qty = parseInt(row.find('td').eq(3).text()); // Quantity (numeric value)
+     const price = parseFloat(row.find('td').eq(4).text()); // Price (numeric value)
+    const total = parseFloat(row.find('td').eq(8).text()); // Total value (numeric)
+
+    console.log('Extracted Data: ', {
+        item: item,
+        prod_desc: prod_desc,
+        price: price,
+        qty: qty,
+        total: total
+    });
+
+    // Check if discount is applied and fetch it (assuming the discount is in the 5th column, adjust if needed)
+    const discount = parseFloat(row.find('td').eq(5).text()) || 0;
+    console.log('Discount:', discount);
+
+    // Set values in the modal form
+    $('#item').val(item);
+    $('#quantity').val(qty);
+    $('#rate').val(price);
+    $('#taxable').val(price);  // Assuming taxable = price, modify if required
+    $('#amount_before_tax').val(price);  // Assuming amount before tax = price, modify if required
+    $('#edit_total').val(total);
+    $('#discount').val(discount);  // Set the discount value correctly here
+    $('#itemNameSpan').text(item);  // Set the item name in the modal header
+
+    // Store the item ID in modal data for later use
+    $('#editItemModal').data('item-id', itemId);
+
+    // Show the modal
+    $('#editItemModal').modal('show');
+
+    // Attach event listeners for input changes (to recalculate total)
+    $('#quantity').off('input').on('input', calculateTotal);
+    $('#rate').off('input').on('input', calculateTotal);
+    $('#discount').off('input').on('input', calculateTotal);
+}
+
+
+
+
+
+
+
+// Update item details when "Update" button is clicked
+$(document).ready(function() {
+    $('#updateItemBtn').click(function() {
+        const itemId = $('#editItemModal').data('item-id');
+        const row = $(`tr[data-item-id="${itemId}"]`);
+
+        if (!row.length) {
+            console.error(`Row with item ID ${itemId} not found`);
+            return;
+        }
+
+        const qty = $('#quantity').val();
+        const price = $('#rate').val();
+        const discount = $('#discount').val();
+        const total = (qty * price) - discount;
+
+        row.find('td').eq(2).text(price);
+        row.find('td').eq(3).text(qty);
+        row.find('td').eq(4).text(total.toFixed(2));
+
+        // Update hidden inputs as well
+        row.find(`input[name="qtyvalue[]"]`).val(qty);
+        row.find(`input[name="priceval[]"]`).val(price);
+        row.find(`input[name="total[]"]`).val(total.toFixed(2));
+
+        calculate_totals();
+          $('input[name="total[]"]').removeAttr('required');
+        $('#editItemModal').modal('hide');
+
+    });
+    $('input[name="total[]"]').attr('type', 'hidden');
+});
+
+
+
+function calculate_totals() {
+    let totalTaxable = 0;
+    let totalCGST = 0;
+    let totalSGST = 0;
+    let totalIGST = 0;
+    let totalCess = 0;
+    let grandTotal = 0;
+
+    // Iterate over table rows to calculate product totals
+    $('#item-list tbody tr').each(function () {
+        const row = $(this);
+
+        // Read data from table cells
+        let qty = parseFloat(row.find('input[name*="[pqty]"]').val()) || 0; // Quantity
+        let price = parseFloat(row.find('input[name*="[pprice]"]').val()) || 0; // Price
+        let discount = parseFloat(row.find('input[name*="[discount]"]').val()) || 0; // Discount
+        let gstRate = parseFloat(row.find('input[name*="[gst]"]').val()) || 0; // GST %
+        let cessRate = parseFloat(row.find('input[name*="[cess_rate]"]').val()) || 0; // Cess Rate %
+
+        // Calculate taxable amount after discount
+        const grossAmount = price * qty;
+        const discountAmount = discount;
+        const taxableAmount = grossAmount - discountAmount;
+
+        // Calculate GST amount
+        const gstAmount = taxableAmount * (gstRate / 100);
+
+        // Split GST into CGST/SGST or assign as IGST
+        let cgst = 0, sgst = 0, igst = 0;
+
+        if ($('#s_state').val() === $('#business_state').val()) {
+            cgst = gstAmount / 2;
+            sgst = gstAmount / 2;
+        } else {
+            igst = gstAmount;
+        }
+
+        // Calculate Cess amount
+        const cessAmount = taxableAmount * (cessRate / 100);
+
+        // Calculate row total
+        const rowTotal = taxableAmount + gstAmount + cessAmount;
+
+        // Update totals
+        totalTaxable += taxableAmount;
+        totalCGST += cgst;
+        totalSGST += sgst;
+        totalIGST += igst;
+        totalCess += cessAmount;
+        grandTotal += rowTotal;
+
+        // Update row cells if needed
+        row.find('input[name*="[cgst]"]').val(cgst.toFixed(2));
+        row.find('input[name*="[sgst]"]').val(sgst.toFixed(2));
+        row.find('input[name*="[igst]"]').val(igst.toFixed(2));
+        row.find('input[name*="[cess_amount]"]').val(cessAmount.toFixed(2));
+        row.find('input[name*="[ptotal]"]').val(rowTotal.toFixed(2));
+    });
+
+    // Add Freight Charges
+    const freightCharges = [
+        parseFloat($('#roadFreightCharges').val()) || 0,
+        parseFloat($('#railFreightCharges').val()) || 0,
+        parseFloat($('#airFreightCharges').val()) || 0,
+        parseFloat($('#shipFreightCharges').val()) || 0,
+    ].reduce((sum, charge) => sum + charge, 0);
+    grandTotal += freightCharges;
+
+    // Add Additional Charges
+    const additionalCharges = Array.from(document.querySelectorAll('.charge-input'))
+        .reduce((acc, input) => acc + (parseFloat(input.value) || 0), 0);
+    grandTotal += additionalCharges;
+
+    // Add TCS
+    const tcsTaxPercent = parseFloat($('#tcsTax').val()) || 0;
+    const tcsValue = totalTaxable * (tcsTaxPercent / 100);
+    grandTotal += tcsValue;
+
+    // Update totals in the UI
+    $('#final_taxable_amt').text(totalTaxable.toFixed(2));
+    $('#final_gst_amount').text((totalCGST + totalSGST + totalIGST).toFixed(2));
+    $('#final_cess_amount').text(totalCess.toFixed(2));
+
+    $('#final_taxable_amt_field').val(totalTaxable.toFixed(2));
+    $('#final_gst_amount_field').val((totalCGST + totalSGST + totalIGST).toFixed(2));
+    $('#final_cess_amount_field').val(totalCess.toFixed(2));
+
+    $('#gtotal').text(grandTotal.toFixed(2));
+    $('#total_amount').val(grandTotal.toFixed(2));
+
+    console.log(`Grand Total: ${grandTotal.toFixed(2)}`);
+}
+
+
+
+
+
+
+// Function to remove an item
+function remove_item(button) {
+    $(button).closest('tr').remove(); // Remove the selected row
+    calculate_totals(); // Recalculate totals
+}
+function addCharge() {
+    const select = document.getElementById("additional_charges");
+    const selectedOption = select.options[select.selectedIndex];
+
+    if (selectedOption.value) {
+        const chargeName = selectedOption.text;
+        const chargeValue = parseFloat(selectedOption.getAttribute("data-charge")) || 0;
+
+        // Check for duplicate charges
+        const existingCharge = document.getElementById("charge_" + selectedOption.value);
+        if (existingCharge) {
+            console.log("Duplicate charge detected:", existingCharge.id);
+            alert("This charge has already been added.");
+            return;
+        }
+
+        const chargesList = document.querySelector("#additional-charges-container .additional-charges-list");
+        const row = document.createElement("div");
+        row.id = "charge_" + selectedOption.value;
+        row.className = "additional-charge-row";
+
+        // Hidden input fields
+        const hiddenTypeInput = document.createElement("input");
+        hiddenTypeInput.type = "hidden";
+        hiddenTypeInput.name = "additionalCharges[charge_type][]";
+        hiddenTypeInput.value = chargeName;
+
+        const hiddenValueInput = document.createElement("input");
+        hiddenValueInput.type = "hidden";
+        hiddenValueInput.name = "additionalCharges[charge_price][]";
+        hiddenValueInput.value = chargeValue;
+
+        // Row content
+        row.innerHTML = `
+            <div class="row align-items-center">
+                <div class="col-5 text-right">
+                    <span class="charge-name">${chargeName}</span>
+                </div>
+                <div class="col-2">
+                    <button type="button" onclick="removeCharge('${row.id}')" class="btn btn-link text-danger">Remove</button>
+                </div>
+                <div class="col-5">
+                    <input type="number" class="form-control charge-input text-right" value="${chargeValue}" 
+                    oninput="syncChargeValue(this, '${row.id}')" style="width: 100%;">
+                </div>
+            </div>
+        `;
+
+        // Append and sync
+        chargesList.appendChild(row);
+        row.appendChild(hiddenTypeInput);
+        row.appendChild(hiddenValueInput);
+
+        // Reset dropdown selection
+        select.value = "";
+
+        // Calculate totals
+        setTimeout(calculate_totals, 0);
+    }
+}
+
+function syncChargeValue(input, rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        const hiddenInput = row.querySelector('input[name="additionalCharges[charge_price][]"]');
+        if (hiddenInput) {
+            hiddenInput.value = parseFloat(input.value) || 0; // Update hidden input value
+        }
+    }
+
+    // Recalculate totals after syncing
+    calculate_totals();
+}
+
+
+
+
+
+
+    function editCharge(rowId) {
+        var row = document.getElementById(rowId);
+        var input = row.querySelector(".charge-input");
+        var editButton = row.querySelector("button");
+
+     // Toggle between Edit and Save
+if (input.readOnly) {
+    input.readOnly = false;
+    input.style.width = "150%"; // Increase width of input for easier editing
+    input.style.height = "30px"; // Decrease height of the input
+    editButton.innerText = "Save";
+    editButton.onclick = function() {
+        saveCharge(rowId);
+    };
+}
+    }
+    function saveCharge(rowId) {
+        var row = document.getElementById(rowId);
+        var input = row.querySelector(".charge-input");
+        var editButton = row.querySelector("button");
+
+        // Save the edited value and revert button to Edit
+        input.readOnly = true;
+        editButton.innerText = "Edit";
+        editButton.onclick = function() {
+            editCharge(rowId);
+        };
+
+        // Update total after editing
+        calculateTotal();
+    }
+
+    function removeCharge(rowId) {
+        var row = document.getElementById(rowId);
+        row.parentNode.removeChild(row);
+
+        // Update total
+        calculateTotal();
+    }
+    function calculateGrandTotal() {
+    // Get values from the DOM
+    const taxableAmount = parseFloat(document.getElementById('final_taxable_amt').textContent) || 0;
+    const totalGST = parseFloat(document.getElementById('final_gst_amount').textContent) || 0;
+    const totalCess = parseFloat(document.getElementById('final_cess_amount').textContent) || 0;
+
+    // Calculate additional charges
+    let additionalCharges = 0;
+    document.querySelectorAll('.charge-input').forEach(input => {
+        additionalCharges += parseFloat(input.value) || 0;
+    });
+
+    // Calculate the grand total
+    const grandTotal = taxableAmount + totalGST + totalCess + additionalCharges;
+
+    // Update the DOM
+    document.getElementById('gtotal').textContent = grandTotal.toFixed(2);
+    document.getElementById('total_amount').value = grandTotal.toFixed(2);
+
+    // Debugging in console
+    console.log(`Taxable Amount: ${taxableAmount}`);
+    console.log(`Total GST: ${totalGST}`);
+    console.log(`Total Cess: ${totalCess}`);
+    console.log(`Additional Charges: ${additionalCharges}`);
+    console.log(`Grand Total: ${grandTotal}`);
+}
+
+// Trigger the calculation when additional charges or other values are updated
+document.querySelectorAll('.charge-input, #final_taxable_amt, #final_gst_amount, #final_cess_amount').forEach(element => {
+    element.addEventListener('input', calculateGrandTotal);
+});
+
+// Initial calculation on page load
+document.addEventListener('DOMContentLoaded', () => {
+    calculateGrandTotal();
+});
+
+</script>
+
+</body>
+</html>

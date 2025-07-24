@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Details and Invoice Preview</title>
+    <style>
+        /* Define the styles for the form and preview div */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .form-container {
+            width: 400px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+        .invoice-preview {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Product Details Form</h2>
+        <form id="productForm">
+            <label for="productName">Product Name:</label>
+            <input type="text" id="productName" name="productName" required><br>
+
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" required><br>
+
+            <label for="price">Price:</label>
+            <input type="number" id="price" name="price" required><br>
+
+            <!-- Add more input fields for other product details as needed -->
+
+            <input type="submit" value="Add to Invoice">
+        </form>
+    </div>
+
+    <div class="invoice-preview">
+        <h2>Invoice Preview</h2>
+        <div id="previewContent">
+            <!-- The preview of invoice structure will be displayed here dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // Function to update the invoice preview with form data
+        function updatePreview() {
+            var productName = document.getElementById('productName').value;
+            var quantity = document.getElementById('quantity').value;
+            var price = document.getElementById('price').value;
+
+            // Update the previewContent div with the invoice structure
+            var previewContent = document.getElementById('previewContent');
+            var html = "<p><strong>Product Name:</strong> " + productName + "</p>";
+            html += "<p><strong>Quantity:</strong> " + quantity + "</p>";
+            html += "<p><strong>Price:</strong> $" + price + "</p>";
+            // Add more lines as needed for other product details
+
+            previewContent.innerHTML = html;
+        }
+
+        // Attach event listeners to form fields
+        document.getElementById('productName').addEventListener('input', updatePreview);
+        document.getElementById('quantity').addEventListener('input', updatePreview);
+        document.getElementById('price').addEventListener('input', updatePreview);
+        // Add more event listeners for other form fields as needed
+    </script>
+</body>
+</html>

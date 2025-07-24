@@ -1,0 +1,70 @@
+# Disable directory listing
+Options -Indexes
+
+# Protect certain directories from PHP execution
+
+# Prevent hotlinking of images
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^http://(www\.)?kranberriesonline.com/ [NC]
+RewriteRule \.(jpg|jpeg|png|gif|bmp)$ - [F]
+
+# Force HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Add HTTP Security Headers
+Header set X-Content-Type-Options "nosniff"
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+Header always set X-Frame-Options "SAMEORIGIN"
+Header set X-XSS-Protection "1; mode=block"
+
+# Block suspicious user agents (Googlebot, Bingbot, etc.)
+SetEnvIf User-Agent "Googlebot|Bingbot|Slurp" bad_bot
+Order Allow,Deny
+Allow from all
+Deny from env=bad_bot
+
+# Deny access to hidden files
+<FilesMatch "^\.">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# Allow only image and PDF files to be uploaded
+<FilesMatch "\.(jpg|jpeg|png|gif|bmp|pdf|txt|docx)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Deny PHP and executable files
+<FilesMatch "\.(php|php5|phtml|pl|cgi|exe|sh|bat)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# Prevent script execution in upload directories (adjust path as needed)
+<FilesMatch "\.(php|php5|phtml|pl|cgi|exe|sh|bat)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Block execution of sensitive files
+<Files ~ "^.*\.([Hh][Tt][Aa][Cc][Cc]|env|git|svn|bash_profile)$">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny access to .htaccess files
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Limit the size of uploaded files (example: 10MB)
+LimitRequestBody 10485760
+
+# Block requests with suspicious file extensions
+RewriteCond %{REQUEST_URI} \.(php|php5|phtml|pl|cgi|exe|sh|bat|dll)$ [NC]
+RewriteRule ^.*$ - [F,L]

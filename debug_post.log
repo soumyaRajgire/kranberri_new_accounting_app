@@ -1,0 +1,29 @@
+Array
+(
+    [business_state] => Karnataka
+    [invoice_code] => INV026
+    [invoice_date] => 2024-12-13
+    [dueDate] => 2025-01-13
+    [cst_mstr_id] => 6
+    [customer_email] => teju@gmail.com
+    [customer_s_state] => Karnataka
+    [customer_b_state] => Karnataka
+    [customer_name_choice] => teju | 7873425898
+    [itemno] => 
+    [product_choice] => 
+    [productid] => 1
+    [prod_desc] => 
+    [qty] => 1
+    [price] => 
+    [discount] => 
+    [gst] => 
+    [netprice] => 42372.88
+    [ttprice] => 50000
+    [cess_rate] => 
+    [cess_amount] => 
+    [in_ex_gst] => inclusive of GST
+    [note] => 
+    [total_amount] => 0
+    [transportMode] => None
+    [terms_condition] => 
+)

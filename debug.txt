@@ -1,0 +1,56 @@
+Array
+(
+    [products] => Array
+        (
+            [0] => Array
+                (
+                    [itemno] => product1
+                    [product_name] => 
+                    [product_desc] => 1
+                    [quantity] => 42372.88
+                    [price] => 0
+                    [discount] => 18
+                    [gst] => 3813.56
+                    [gst_amount] => 3813.56
+                    [total] => 0
+                    [cgst] => 0
+                    [sgst] => 50000
+                    [cess_rate] => Remove
+                    [cess_amount] => 0
+                )
+
+        )
+
+    [additionalCharges] => Array
+        (
+        )
+
+    [transportDetails] => Array
+        (
+            [mode] => None
+        )
+
+    [otherDetails] => Array
+        (
+            [po_number] => 
+            [po_date] => 
+            [challan_number] => 
+            [due_date] => 2025-01-13
+            [ewaybill_number] => 
+            [sales_person] => 
+            [reverse_charge] => 0
+            [tcs_value] => 0
+            [tcs_type] => 
+        )
+
+    [invoice_number] => INV04
+    [invoice_date] => 2024-12-13
+    [customer_name] => teju | 7873425898
+    [customer_email] => teju@gmail.com
+    [total_amount] => 42372.88
+    [total_gst] => 7627.12
+    [total_cess] => 0
+    [grand_total] => 50000
+    [note] => 
+    [terms] => 
+)
